@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Complete Randomized Design (CRD)</title>
+</head>
+<body>
+
+<h1>Complete Randomized Design (CRD)</h1>
+<p>A Completely Randomized Design (CRD) is one where treatments are assigned completely at random so that each experimental unit has the same chance of receiving any one treatment. For the CRD,
+any difference among experimental units receiving the same treatment is considered as experimental error.
+Hence, CRD is only appropriate for experiments with homogenous experimental units, such as laboratory
+experiments, where environmental effects are relatively easy to control. For field experiments, where there
+are generally large variations among experimental plots, is such environmental factors as soil. CRD is
+rarely used.
+</p>
+
+<strong> CRD: Randomization and Layout </strong>
+
+<p><em>The step-by-step procedures for randomization and layout for CRD are given here for a field experiment with four Treatments A, B, C, D each replicated 5 times.</em></p>
+
+
+
+<ul>
+	<li> <b>Step 1.</b> Determine the total number of experimental plots (n) as the product of the number of treatments
+(t) and the number of replications (r ), that is n = rt.
+In our example, we have a field experiment with four treatments and replicated five times, in our case we
+have, n = (5)(4) = 20
+<p></p>
+	<li> <b>Step 2.</b> Create an experimental plot and assign a plot number to each experimental plot in any convenient
+manner; for example. Consecutively from 1 to n.
+	<li> <b>Step 3.</b> Assign the treatments to the experimental plot by any of the following randomization schemes.
+In our case, we will use <button onclick="window.location.href='https://www.studocu.com/ph/document/polytechnic-university-of-the-philippines/advanced-statistics/table-of-random-numbers/95259063?sid=875dd5b2-3142-4dd9-aff8-9d284708e4541791850110'">Table of Random Numbers</button>
+ </ul>
+
+    <p id="info" style="display: none;">
+        <a href="https://randomnr.com/random-number-table/">
+Table of Random Numbers </a>
+    </p>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Step-by-Step CRD Generator</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f3f5f7;
+        color: #222;
+        margin: 20px;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        padding: 24px;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+    }
+
+    h1, h2 {
+        text-align: center;
+    }
+
+    .step {
+        border: 1px solid #bbb;
+        padding: 18px;
+        margin: 20px 0;
+        border-radius: 6px;
+    }
+
+    .step h2 {
+        text-align: left;
+        font-size: 20px;
+    }
+
+    .controls {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 15px 0;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+    }
+
+    input {
+        width: 100px;
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 10px 15px;
+        margin: 5px 5px 5px 0;
+        border: 1px solid #174a70;
+        border-radius: 4px;
+        background: #174a70;
+        color: white;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #28658e;
+    }
+
+    button:disabled {
+        background: #aaa;
+        border-color: #aaa;
+        cursor: not-allowed;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .note {
+        color: #555;
+        font-size: 14px;
+    }
+
+    .status {
+        font-weight: bold;
+        margin: 12px 0;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        margin: 15px 0;
+    }
+
+    table {
+        border-collapse: collapse;
+        margin: auto;
+        text-align: center;
+    }
+
+    th, td {
+        border: 1px solid black;
+        padding: 9px;
+    }
+
+    th {
+        background: #e8edf1;
+    }
+
+    .plot-cell {
+        width: 115px;
+        height: 115px;
+        min-width: 115px;
+        box-sizing: border-box;
+        padding: 5px;
+    }
+
+    .plot-cell div {
+        margin: 5px 0;
+    }
+
+    .treatment {
+        font-size: 25px;
+        font-weight: bold;
+    }
+
+    @media print {
+        body {
+            margin: 0;
+            background: white;
+        }
+
+        .container {
+            border: none;
+            padding: 0;
+        }
+
+        .controls, button, .note {
+            display: none !important;
+        }
+
+        .step {
+            border: none;
+            page-break-inside: avoid;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>CRD Randomization Generator</h1>
+<p style="text-align:center;">
+    Completely Randomized Design (CRD)
+</p>
+
+<!-- STEP 1 -->
+<section class="step" id="step1">
+    <h2>Step 1. Specify Treatments and Replications</h2>
+
+    <div class="controls">
+        <div>
+            <label for="treatments">Treatments (t)</label>
+            <input type="number" id="treatments"
+                   min="1" max="10" value="3">
+        </div>
+
+        <div>
+            <label for="replications">Replications (r)</label>
+            <input type="number" id="replications"
+                   min="1" max="10" value="4">
+        </div>
+    </div>
+
+    <p id="totalPlots" class="status">
+        Total plots (N = rt): 12
+    </p>
+
+    <button onclick="saveSettings()">
+        Save and Continue
+    </button>
+
+    <p id="message1" class="status"></p>
+</section>
+
+<!-- STEP 2 -->
+<section class="step hidden" id="step2">
+    <h2>Step 2. Generate and Rank Random Numbers</h2>
+
+    <p id="step2Info"></p>
+
+    <p class="note">
+        Generate one random number for each plot. The smallest
+        random number receives rank 1.
+    </p>
+
+    <button onclick="generateRandomNumbers()">
+        Generate Random Numbers
+    </button>
+
+    <div id="randomResults" class="table-wrapper"></div>
+
+    <button id="continueButton" onclick="showStep3()" disabled>
+        Continue to Plot Layout
+    </button>
+</section>
+
+<!-- STEP 3 -->
+<section class="step hidden" id="step3">
+    <h2>Step 3. Generate the Experimental Plot Layout</h2>
+
+    <p id="step3Info"></p>
+
+    <p class="note">
+        Treatment assignments are based on the ranks generated
+        in Step 2. Each treatment appears exactly r times.
+    </p>
+
+    <button onclick="generateLayout()">
+        Generate Plot Layout
+    </button>
+
+    <div id="plotLayout" class="table-wrapper"></div>
+
+    <button onclick="window.print()">Print Results</button>
+    <button onclick="startAgain()">Start Again</button>
+</section>
+
+</div>
+
+<script>
+    // Variables shared by all three steps
+    let t = 0;
+    let r = 0;
+    let N = 0;
+    let plots = [];
+    let rankedPlots = [];
+    let layoutGenerated = false;
+
+    const treatmentsInput =
+        document.getElementById("treatments");
+
+    const replicationsInput =
+        document.getElementById("replications");
+
+    // Update N automatically when inputs change
+    function updateTotal() {
+        const currentT = Number(treatmentsInput.value);
+        const currentR = Number(replicationsInput.value);
+
+        if (
+            Number.isInteger(currentT) &&
+            Number.isInteger(currentR) &&
+            currentT >= 1 && currentT <= 10 &&
+            currentR >= 1 && currentR <= 10
+        ) {
+            document.getElementById("totalPlots").textContent =
+                `Total plots (N = rt): ${currentT} × ${currentR} = ${currentT * currentR}`;
+        } else {
+            document.getElementById("totalPlots").textContent =
+                "Enter whole numbers from 1 to 10.";
+        }
+    }
+
+    treatmentsInput.addEventListener("input", updateTotal);
+    replicationsInput.addEventListener("input", updateTotal);
+
+    // STEP 1: Save the settings
+    function saveSettings() {
+        t = Number(treatmentsInput.value);
+        r = Number(replicationsInput.value);
+
+        const message = document.getElementById("message1");
+
+        if (
+            !Number.isInteger(t) || !Number.isInteger(r) ||
+            t < 1 || t > 10 || r < 1 || r > 10
+        ) {
+            message.textContent =
+                "Please enter whole numbers from 1 to 10.";
+            return;
+        }
+
+        N = t * r;
+        plots = [];
+        rankedPlots = [];
+        layoutGenerated = false;
+
+        document.getElementById("step2Info").textContent =
+            `Treatments: ${t} | Replications: ${r} | Total plots: ${N}`;
+
+        document.getElementById("randomResults").innerHTML = "";
+        document.getElementById("plotLayout").innerHTML = "";
+        document.getElementById("continueButton").disabled = true;
+
+        document.getElementById("step2").classList.remove("hidden");
+        document.getElementById("step3").classList.add("hidden");
+
+        message.textContent =
+            "Settings saved. Proceed to Step 2.";
+
+        document.getElementById("step2").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+    // STEP 2: Generate random numbers and ranks
+    function generateRandomNumbers() {
+        plots = [];
+
+        for (let i = 1; i <= N; i++) {
+            plots.push({
+                plot: i,
+                random: Math.random()
+            });
+        }
+
+        // Sort from smallest random number to largest
+        rankedPlots = [...plots].sort(
+            (a, b) => a.random - b.random || a.plot - b.plot
+        );
+
+        // Assign a rank to each plot
+        rankedPlots.forEach((item, index) => {
+            item.rank = index + 1;
+        });
+
+        // Show results in original plot-number order
+        const rankMap = new Map();
+
+        rankedPlots.forEach(item => {
+            rankMap.set(item.plot, item);
+        });
+
+        let html = `
+            <table>
+                <tr>
+                    <th>Plot Number</th>
+                    <th>Random Number</th>
+                    <th>Rank</th>
+                </tr>`;
+
+        for (let i = 1; i <= N; i++) {
+            const item = rankMap.get(i);
+
+            html += `
+                <tr>
+                    <td>${item.plot}</td>
+                    <td>${item.random.toFixed(4)}</td>
+                    <td>${item.rank}</td>
+                </tr>`;
+        }
+
+        html += "</table>";
+
+        document.getElementById("randomResults").innerHTML = html;
+
+        document.getElementById("continueButton").disabled = false;
+
+        // If random numbers are generated again, reset Step 3
+        document.getElementById("step3").classList.add("hidden");
+        document.getElementById("plotLayout").innerHTML = "";
+        layoutGenerated = false;
+    }
+
+    // STEP 3: Assign treatments using the existing ranks
+    function showStep3() {
+        if (rankedPlots.length !== N) {
+            return;
+        }
+
+        document.getElementById("step3Info").textContent =
+            `Treatments: ${t} | Replications: ${r} | Total plots: ${N}`;
+
+        document.getElementById("step3").classList.remove("hidden");
+
+        document.getElementById("step3").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+    function generateLayout() {
+        if (rankedPlots.length !== N) {
+            return;
+        }
+
+        // Treatment A is character code 65
+        // Every group of r consecutive ranks gets one treatment
+        rankedPlots.forEach((item, index) => {
+            item.treatment = String.fromCharCode(
+                65 + Math.floor(index / r)
+            );
+        });
+
+        // Retrieve assignments by physical plot number
+        const assignment = new Map();
+
+        rankedPlots.forEach(item => {
+            assignment.set(item.plot, item);
+        });
+
+        let html = "<table>";
+
+        // Rows = t; columns = r
+        let plotNumber = 1;
+
+        for (let row = 1; row <= t; row++) {
+            html += "<tr>";
+
+            for (let col = 1; col <= r; col++) {
+                const item = assignment.get(plotNumber);
+
+                html += `
+                    <td class="plot-cell">
+                        <div>Plot ${plotNumber}</div>
+                        <div class="treatment">${item.treatment}</div>
+                    </td>`;
+
+                plotNumber++;
+            }
+
+            html += "</tr>";
+        }
+
+        html += "</table>";
+
+        document.getElementById("plotLayout").innerHTML = html;
+        layoutGenerated = true;
+    }
+
+    // Return to Step 1 and clear previous results
+    function startAgain() {
+        t = 0;
+        r = 0;
+        N = 0;
+        plots = [];
+        rankedPlots = [];
+        layoutGenerated = false;
+
+        document.getElementById("step2").classList.add("hidden");
+        document.getElementById("step3").classList.add("hidden");
+
+        document.getElementById("randomResults").innerHTML = "";
+        document.getElementById("plotLayout").innerHTML = "";
+        document.getElementById("message1").textContent = "";
+        document.getElementById("continueButton").disabled = true;
+
+        document.getElementById("step1").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+    updateTotal();
+</script>
+
+
+</body>
+</html>
