@@ -620,6 +620,140 @@ function printCRDPlot() {
     window.print();
 }
 
+function logGamma(z) {
+    const coefficients = [
+        676.5203681218851,
+        -1259.1392167224028,
+        771.32342877765313,
+        -176.61502916214059,
+        12.507343278686905,
+        -0.13857109526572012,
+        9.984369578019572e-6,
+        1.5056327351493116e-7
+    ];
+
+    if (z < 0.5) {
+        return Math.log(Math.PI) -
+            Math.log(Math.sin(Math.PI * z)) -
+            logGamma(1 - z);
+    }
+
+    z -= 1;
+    let x = 0.99999999999980993;
+
+    for (let i = 0; i < coefficients.length; i++) {
+        x += coefficients[i] / (z + i + 1);
+    }
+
+    const q = z + coefficients.length - 0.5;
+
+    return 0.5 * Math.log(2 * Math.PI) +
+        (z + 0.5) * Math.log(q) - q + Math.log(x);
+}
+
+function betaFraction(a, b, x) {
+    const maxIterations = 200;
+    const epsilon = 3e-14;
+    const tiny = 1e-300;
+
+    const qab = a + b;
+    const qap = a + 1;
+    const qam = a - 1;
+
+    let c = 1;
+    let d = 1 - qab * x / qap;
+
+    if (Math.abs(d) < tiny) d = tiny;
+
+    d = 1 / d;
+    let h = d;
+
+    for (let m = 1; m <= maxIterations; m++) {
+        const m2 = 2 * m;
+
+        let aa = m * (b - m) * x /
+            ((qam + m2) * (a + m2));
+
+        d = 1 + aa * d;
+        if (Math.abs(d) < tiny) d = tiny;
+
+        c = 1 + aa / c;
+        if (Math.abs(c) < tiny) c = tiny;
+
+        d = 1 / d;
+        h *= d * c;
+
+        aa = -(a + m) * (qab + m) * x /
+            ((a + m2) * (qap + m2));
+
+        d = 1 + aa * d;
+        if (Math.abs(d) < tiny) d = tiny;
+
+        c = 1 + aa / c;
+        if (Math.abs(c) < tiny) c = tiny;
+
+        d = 1 / d;
+
+        const delta = d * c;
+        h *= delta;
+
+        if (Math.abs(delta - 1) < epsilon) {
+            return h;
+        }
+    }
+
+    throw new Error("Beta calculation did not converge.");
+}
+
+function regularizedBeta(x, a, b) {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+
+    const bt = Math.exp(
+        logGamma(a + b) - logGamma(a) - logGamma(b) +
+        a * Math.log(x) + b * Math.log1p(-x)
+    );
+
+    if (x < (a + 1) / (a + b + 2)) {
+        return bt * betaFraction(a, b, x) / a;
+    }
+
+    return 1 -
+        bt * betaFraction(b, a, 1 - x) / b;
+}
+
+function fCritical(alpha, df1, df2) {
+    if (
+        !(alpha > 0 && alpha < 1) ||
+        !Number.isInteger(df1) || df1 < 1 ||
+        !Number.isInteger(df2) || df2 < 1
+    ) {
+        return NaN;
+    }
+
+    // Find the beta-distribution quantile using bisection.
+    const target = 1 - alpha;
+    let low = 0;
+    let high = 1;
+
+    for (let i = 0; i < 120; i++) {
+        const mid = (low + high) / 2;
+        const probability = regularizedBeta(
+            mid, df1 / 2, df2 / 2
+        );
+
+        if (probability < target) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+    const x = (low + high) / 2;
+
+    return df2 * x / (df1 * (1 - x));
+}
+
 function createAnovaInputs() {
     const t = Number(document.getElementById("anovaT").value);
     const r = Number(document.getElementById("anovaR").value);
@@ -783,6 +917,34 @@ function computeCRDAnova() {
             F = Infinity;
         }
     }
+	const F05 = fCritical(0.05, dfTreatment, dfError);
+const F01 = fCritical(0.01, dfTreatment, dfError);
+
+function getDecision(Fcritical) {
+    if (Number.isNaN(F) || !Number.isFinite(Fcritical)) {
+        return "Undetermined";
+    }
+
+    return F > Fcritical
+        ? "Reject H₀"
+        : "Fail to reject H₀";
+}
+
+const decision05 = getDecision(F05);
+const decision01 = getDecision(F01);
+
+let interpretation;
+
+if (Number.isNaN(F)) {
+    interpretation =
+        "The F-test result is undefined. Check the observations and error variance.";
+} else if (F > F05) {
+    interpretation =
+        "There is a statistically significant difference among the treatment means at the 0.05 significance level. Reject the null hypothesis.";
+} else {
+    interpretation =
+        "There is insufficient evidence of a difference among the treatment means at the 0.05 significance level. Fail to reject the null hypothesis.";
+}
 
     const fmt = value =>
         Number.isFinite(value) ? value.toFixed(4) :
@@ -895,44 +1057,100 @@ function computeCRDAnova() {
     </div>
 `;
 
-    const tableHTML = `
-        <h2>CRD ANOVA Table</h2>
+const tableHTML = `
+    <h2>CRD ANOVA Table</h2>
+
+    <div class="table-wrapper">
         <table class="anova-results">
-            <tr>
-                <th>Source of Variation</th>
-                <th>SS</th>
-                <th>df</th>
-                <th>MS</th>
-                <th>F</th>
-            </tr>
-            <tr>
-                <td>Treatments</td>
-                <td>${fmt(ssTreatment)}</td>
-                <td>${dfTreatment}</td>
-                <td>${fmt(MSTr)}</td>
-                <td>${fmt(F)}</td>
-            </tr>
-            <tr>
-                <td>Error</td>
-                <td>${fmt(ssError)}</td>
-                <td>${dfError}</td>
-                <td>${fmt(MSE)}</td>
-                <td>—</td>
-            </tr>
-            <tr>
-                <td>Total</td>
-                <td>${fmt(ssTotal)}</td>
-                <td>${dfTotal}</td>
-                <td>—</td>
-                <td>—</td>
-            </tr>
+            <thead>
+                <tr>
+                    <th>Source of Variation</th>
+                    <th>SS</th>
+                    <th>df</th>
+                    <th>MS</th>
+                    <th>F Calculated</th>
+                    <th>F Critical (0.05)</th>
+                    <th>Decision (0.05)</th>
+                    <th>F Critical (0.01)</th>
+                    <th>Decision (0.01)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Treatments</td>
+                    <td>${fmt(ssTreatment)}</td>
+                    <td>${dfTreatment}</td>
+                    <td>${fmt(MSTr)}</td>
+                    <td>${fmt(F)}</td>
+                    <td>${fmt(F05)}</td>
+                    <td>${decision05}</td>
+                    <td>${fmt(F01)}</td>
+                    <td>${decision01}</td>
+                </tr>
+                <tr>
+                    <td>Error</td>
+                    <td>${fmt(ssError)}</td>
+                    <td>${dfError}</td>
+                    <td>${fmt(MSE)}</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                </tr>
+                <tr>
+                    <td>Total</td>
+                    <td>${fmt(ssTotal)}</td>
+                    <td>${dfTotal}</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                </tr>
+            </tbody>
         </table>
-        ${formulaHTML}
-        <p><strong>Note:</strong> Compare the calculated F-statistic
-        with the appropriate critical F-value for your chosen
-        significance level, using numerator df = ${dfTreatment}
-        and denominator df = ${dfError}.</p>
-    `;
+    </div>
+
+    ${formulaHTML}
+
+    <h3>Hypothesis Testing</h3>
+
+    <p><strong>Null hypothesis (H₀):</strong>
+    All treatment population means are equal.</p>
+
+    <p><strong>Alternative hypothesis (H₁):</strong>
+    At least one treatment population mean differs.</p>
+
+    <p><strong>Decision rule at α = 0.05:</strong>
+    Reject H₀ if F calculated &gt; F critical (0.05).
+    Otherwise, fail to reject H₀.</p>
+
+    <p><strong>Decision rule at α = 0.01:</strong>
+    Reject H₀ if F calculated &gt; F critical (0.01).
+    Otherwise, fail to reject H₀.</p>
+
+    <h3>Interpretation</h3>
+
+    <p>${interpretation}</p>
+
+    <p><strong>At the 0.01 significance level:</strong>
+    ${
+        Number.isNaN(F)
+            ? "The result is undetermined."
+            : F > F01
+                ? "The treatment means differ significantly at the 0.01 level. Reject H₀."
+                : "There is insufficient evidence of a difference among the treatment means at the 0.01 level. Fail to reject H₀."
+    }</p>
+
+    <p class="note">
+        The F-test determines whether there is evidence that at least
+        one treatment mean differs. If the result is significant,
+        a suitable post hoc test may be needed to identify which
+        treatment means differ.
+    </p>
+`;
 
     output.innerHTML = tableHTML;
 
