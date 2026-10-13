@@ -608,7 +608,7 @@ function printCRDPlot() {
     window.print();
 }
 
-	function createAnovaInputs() {
+function createAnovaInputs() {
     const t = Number(document.getElementById("anovaT").value);
     const r = Number(document.getElementById("anovaR").value);
 
@@ -620,10 +620,13 @@ function printCRDPlot() {
     message.textContent = "";
 
     if (!Number.isInteger(t) || !Number.isInteger(r) ||
-        t < 1 || t > 10 || r < 2 || r > 10) {
+        t < 2 || t > 10 || r < 2 || r > 10) {
+
         message.textContent =
-            "Enter 1–10 treatments and 2–10 replications.";
+            "Enter 2–10 treatments and 2–10 replications.";
+
         table.innerHTML = "";
+        document.getElementById("anovaN").textContent = "";
         return;
     }
 
