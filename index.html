@@ -774,6 +774,7 @@ function fCritical(alpha, df1, df2) {
 }
 
 function createAnovaInputs() {
+
     const t = Number(document.getElementById("anovaT").value);
     const r = Number(document.getElementById("anovaR").value);
 
@@ -829,12 +830,15 @@ function createAnovaInputs() {
     table.innerHTML = html;
 }
 
+
 function computeCRDAnova() {
     const t = Number(document.getElementById("anovaT").value);
     const r = Number(document.getElementById("anovaR").value);
 
     const message = document.getElementById("anovaMessage");
     const output = document.getElementById("anovaOutput");
+    const replicationType =
+document.getElementById("replicationType").value;
 
     message.textContent = "";
     output.innerHTML = "";
@@ -846,25 +850,32 @@ function computeCRDAnova() {
         return;
     }
 
-    const N = t * r;
-    const treatmentTotals = [];
+const treatmentTotals = [];
+    const treatmentCounts = [];
     const observations = [];
 
-    // Read and validate every observation
+    // Read and validate observations
     for (let i = 0; i < t; i++) {
         let total = 0;
-        const values = [];
+        let count = 0;
 
         for (let j = 0; j < r; j++) {
             const input = document.getElementById(`anova_${i}_${j}`);
 
-            if (!input || input.value.trim() === "") {
-                message.textContent =
-                    "Please enter every observation before computing.";
-                return;
+            if (!input) continue;
+
+            const rawValue = input.value.trim();
+
+            if (rawValue === "") {
+                if (replicationType === "equal") {
+                    message.textContent =
+                        "Please complete every observation for equal replications.";
+                    return;
+                }
+                continue;
             }
 
-            const value = Number(input.value);
+            const value = Number(rawValue);
 
             if (!Number.isFinite(value)) {
                 message.textContent =
@@ -872,15 +883,39 @@ function computeCRDAnova() {
                 return;
             }
 
-            values.push(value);
             total += value;
+            count++;
             observations.push(value);
         }
 
+        if (count === 0) {
+            message.textContent =
+                `Enter at least one observation for Treatment ${i + 1}.`;
+            return;
+        }
+
         treatmentTotals.push(total);
+        treatmentCounts.push(count);
 
         document.getElementById(`anovaTotal_${i}`).textContent =
             total.toFixed(4);
+    }
+
+    const N = observations.length;
+
+    if (N <= t) {
+        message.textContent =
+            "The total number of observations must exceed the number of treatments.";
+        return;
+    }
+
+    if (
+        replicationType === "equal" &&
+        !treatmentCounts.every(count => count === treatmentCounts[0])
+    ) {
+        message.textContent =
+            "Equal replications require the same number of observations for every treatment.";
+        return;
     }
 
     // 1. Grand total and correction factor
@@ -896,11 +931,13 @@ function computeCRDAnova() {
 
     // 3. Treatment sum of squares
     const SSTr = treatmentTotals.reduce(
-        (sum, total) => sum + total * total / r, 0
+        (sum, total, i) =>
+            sum + (total * total) / treatmentCounts[i], 0
     ) - CF;
 
     // 4. Error sum of squares
     const SSE = SST - SSTr;
+
 
     // Degrees of freedom
     const dfTreatment = t - 1;
@@ -1220,7 +1257,7 @@ function clearAnovaData() {
 
     <div id="anovaOutput" class="table-wrapper"></div>
 
-    <h2>Formulas Used</h2>
+<p><strong>Formulas Used:</strong></p>
 
     <div class="anova-formula">
         <strong>1. Correction Factor</strong>
