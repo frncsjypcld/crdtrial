@@ -1020,7 +1020,7 @@ if (!Number.isFinite(pValue)) {
 }
 
     const fmt = value =>
-        Number.isFinite(value) ? value.toFixed(4) :
+        Number.isFinite(value) ? value.toFixed(2):
         value === Infinity ? "∞" : "—";
 
     // Show formulas with the actual values substituted
