@@ -722,6 +722,25 @@ function regularizedBeta(x, a, b) {
         bt * betaFraction(b, a, 1 - x) / b;
 }
 
+
+function fPValue(F, df1, df2) {
+    if (Number.isNaN(F) || F < 0) return NaN;
+    if (F === Infinity) return 0;
+
+    const x = (df1 * F) / (df1 * F + df2);
+
+    return Math.max(
+        0,
+        Math.min(1, 1 - regularizedBeta(x, df1 / 2, df2 / 2))
+    );
+}
+
+function formatPValue(p) {
+    if (!Number.isFinite(p)) return "—";
+    if (p < 0.001) return "< .001";
+    return p.toFixed(3).replace(/^0/, "");
+}
+
 function fCritical(alpha, df1, df2) {
     if (
         !(alpha > 0 && alpha < 1) ||
@@ -917,7 +936,7 @@ function computeCRDAnova() {
             F = Infinity;
         }
     }
-	const F05 = fCritical(0.05, dfTreatment, dfError);
+const F05 = fCritical(0.05, dfTreatment, dfError);
 const F01 = fCritical(0.01, dfTreatment, dfError);
 
 function getDecision(Fcritical) {
@@ -930,20 +949,24 @@ function getDecision(Fcritical) {
         : "Fail to reject H₀";
 }
 
-const decision05 = getDecision(F05);
-const decision01 = getDecision(F01);
+const pValue = fPValue(F, dfTreatment, dfError);
+const alpha = 0.05;
 
+let decision;
 let interpretation;
 
-if (Number.isNaN(F)) {
+if (!Number.isFinite(pValue)) {
+    decision = "Undetermined";
     interpretation =
-        "The F-test result is undefined. Check the observations and error variance.";
-} else if (F > F05) {
+        "The p-value could not be determined. Check the data and error variance.";
+} else if (pValue < alpha) {
+    decision = "Reject H₀";
     interpretation =
-        "There is a statistically significant difference among the treatment means at the 0.05 significance level. Reject the null hypothesis.";
+        "There is a statistically significant difference among the treatment means at the 0.05 significance level.";
 } else {
+    decision = "Fail to reject H₀";
     interpretation =
-        "There is insufficient evidence of a difference among the treatment means at the 0.05 significance level. Fail to reject the null hypothesis.";
+        "There is insufficient evidence of a statistically significant difference among the treatment means at the 0.05 significance level.";
 }
 
     const fmt = value =>
@@ -1068,11 +1091,8 @@ const tableHTML = `
                     <th>SS</th>
                     <th>df</th>
                     <th>MS</th>
-                    <th>F Calculated</th>
-                    <th>F Critical (0.05)</th>
-                    <th>Decision (0.05)</th>
-                    <th>F Critical (0.01)</th>
-                    <th>Decision (0.01)</th>
+                    <th>F</th>
+                    <th>p</th>
                 </tr>
             </thead>
             <tbody>
@@ -1082,10 +1102,7 @@ const tableHTML = `
                     <td>${dfTreatment}</td>
                     <td>${fmt(MSTr)}</td>
                     <td>${fmt(F)}</td>
-                    <td>${fmt(F05)}</td>
-                    <td>${decision05}</td>
-                    <td>${fmt(F01)}</td>
-                    <td>${decision01}</td>
+                    <td>${formatPValue(pValue)}</td>
                 </tr>
                 <tr>
                     <td>Error</td>
@@ -1094,17 +1111,11 @@ const tableHTML = `
                     <td>${fmt(MSE)}</td>
                     <td>—</td>
                     <td>—</td>
-                    <td>—</td>
-                    <td>—</td>
-                    <td>—</td>
                 </tr>
                 <tr>
                     <td>Total</td>
                     <td>${fmt(ssTotal)}</td>
                     <td>${dfTotal}</td>
-                    <td>—</td>
-                    <td>—</td>
-                    <td>—</td>
                     <td>—</td>
                     <td>—</td>
                     <td>—</td>
@@ -1123,32 +1134,20 @@ const tableHTML = `
     <p><strong>Alternative hypothesis (H₁):</strong>
     At least one treatment population mean differs.</p>
 
-    <p><strong>Decision rule at α = 0.05:</strong>
-    Reject H₀ if F calculated &gt; F critical (0.05).
-    Otherwise, fail to reject H₀.</p>
+    <p><strong>Significance level:</strong> α = .05</p>
 
-    <p><strong>Decision rule at α = 0.01:</strong>
-    Reject H₀ if F calculated &gt; F critical (0.01).
-    Otherwise, fail to reject H₀.</p>
+    <p><strong>Decision rule:</strong>
+    Reject H₀ if p &lt; .05. Otherwise, fail to reject H₀.</p>
 
-    <h3>Interpretation</h3>
+    <p><strong>Decision:</strong> 	     ${decision}</p>
 
+    <p><strong>Interpretation:</strong> 
     <p>${interpretation}</p>
 
-    <p><strong>At the 0.01 significance level:</strong>
-    ${
-        Number.isNaN(F)
-            ? "The result is undetermined."
-            : F > F01
-                ? "The treatment means differ significantly at the 0.01 level. Reject H₀."
-                : "There is insufficient evidence of a difference among the treatment means at the 0.01 level. Fail to reject H₀."
-    }</p>
-
     <p class="note">
-        The F-test determines whether there is evidence that at least
-        one treatment mean differs. If the result is significant,
-        a suitable post hoc test may be needed to identify which
-        treatment means differ.
+        A significant ANOVA indicates that at least one treatment
+        mean differs; a suitable post hoc test may be needed to
+        determine which treatment means differ.
     </p>
 `;
 
@@ -1245,8 +1244,5 @@ function clearAnovaData() {
     </div>
 
 </section>
-
-
-
 </body>
 </html>
