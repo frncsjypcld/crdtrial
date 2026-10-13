@@ -607,9 +607,318 @@ function printCRDPlot() {
 
     window.print();
 }
-	
+
+	function createAnovaInputs() {
+    const t = Number(document.getElementById("anovaT").value);
+    const r = Number(document.getElementById("anovaR").value);
+
+    const table = document.getElementById("anovaInputTable");
+    const output = document.getElementById("anovaOutput");
+    const message = document.getElementById("anovaMessage");
+
+    output.innerHTML = "";
+    message.textContent = "";
+
+    if (!Number.isInteger(t) || !Number.isInteger(r) ||
+        t < 1 || t > 10 || r < 2 || r > 10) {
+        message.textContent =
+            "Enter 1–10 treatments and 2–10 replications.";
+        table.innerHTML = "";
+        return;
+    }
+
+    const N = t * r;
+
+    document.getElementById("anovaN").textContent =
+        `Total observations: N = rt = ${t} × ${r} = ${N}`;
+
+    let html = "<table><tr><th>Treatment</th>";
+
+    for (let j = 1; j <= r; j++) {
+        html += `<th>Rep ${j}</th>`;
+    }
+
+    html += "<th>Treatment Total</th></tr>";
+
+    for (let i = 0; i < t; i++) {
+        const label = String.fromCharCode(65 + i);
+
+        html += `<tr><th>${label}</th>`;
+
+        for (let j = 0; j < r; j++) {
+            html += `
+                <td>
+                    <input type="number" step="any"
+                        id="anova_${i}_${j}"
+                        aria-label="Treatment ${label}, replication ${j + 1}">
+                </td>`;
+        }
+
+        html += `<td id="anovaTotal_${i}">—</td></tr>`;
+    }
+
+    html += "</table>";
+    table.innerHTML = html;
+}
+
+function computeCRDAnova() {
+    const t = Number(document.getElementById("anovaT").value);
+    const r = Number(document.getElementById("anovaR").value);
+
+    const message = document.getElementById("anovaMessage");
+    const output = document.getElementById("anovaOutput");
+
+    message.textContent = "";
+    output.innerHTML = "";
+
+    if (!Number.isInteger(t) || !Number.isInteger(r) ||
+        t < 1 || t > 10 || r < 2 || r > 10) {
+        message.textContent =
+            "Please set valid treatment and replication numbers.";
+        return;
+    }
+
+    const N = t * r;
+    const treatmentTotals = [];
+    const observations = [];
+
+    // Read and validate every observation
+    for (let i = 0; i < t; i++) {
+        let total = 0;
+        const values = [];
+
+        for (let j = 0; j < r; j++) {
+            const input = document.getElementById(`anova_${i}_${j}`);
+
+            if (!input || input.value.trim() === "") {
+                message.textContent =
+                    "Please enter every observation before computing.";
+                return;
+            }
+
+            const value = Number(input.value);
+
+            if (!Number.isFinite(value)) {
+                message.textContent =
+                    "All observations must be valid numbers.";
+                return;
+            }
+
+            values.push(value);
+            total += value;
+            observations.push(value);
+        }
+
+        treatmentTotals.push(total);
+
+        document.getElementById(`anovaTotal_${i}`).textContent =
+            total.toFixed(4);
+    }
+
+    // 1. Grand total and correction factor
+    const G = observations.reduce((sum, value) => sum + value, 0);
+    const CF = G * G / N;
+
+    // 2. Total sum of squares
+    const sumSquares = observations.reduce(
+        (sum, value) => sum + value * value, 0
+    );
+
+    const SST = sumSquares - CF;
+
+    // 3. Treatment sum of squares
+    const SSTr = treatmentTotals.reduce(
+        (sum, total) => sum + total * total / r, 0
+    ) - CF;
+
+    // 4. Error sum of squares
+    const SSE = SST - SSTr;
+
+    // Degrees of freedom
+    const dfTreatment = t - 1;
+    const dfError = N - t;
+    const dfTotal = N - 1;
+
+    // Guard against tiny negative values from rounding
+    const tolerance = 1e-10 *
+        Math.max(1, Math.abs(sumSquares), Math.abs(CF));
+
+    if (SST < -tolerance || SSTr < -tolerance || SSE < -tolerance) {
+        message.textContent =
+            "The computed sums of squares are invalid. Please check the data.";
+        return;
+    }
+
+    const ssTotal = Math.max(0, SST);
+    const ssTreatment = Math.max(0, SSTr);
+    const ssError = Math.max(0, SSE);
+
+    const MSTr = dfTreatment > 0
+        ? ssTreatment / dfTreatment : NaN;
+
+    const MSE = dfError > 0
+        ? ssError / dfError : NaN;
+
+    let F = NaN;
+
+    if (Number.isFinite(MSTr) && Number.isFinite(MSE)) {
+        if (MSE > 0) {
+            F = MSTr / MSE;
+        } else if (MSTr > 0) {
+            F = Infinity;
+        }
+    }
+
+    const fmt = value =>
+        Number.isFinite(value) ? value.toFixed(4) :
+        value === Infinity ? "∞" : "—";
+
+    // Show formulas with the actual values substituted
+    const formulaHTML = `
+        <h3>Computed Values</h3>
+        <p>Grand total: G = ${fmt(G)}</p>
+        <p>Number of observations: N = ${N}</p>
+        <p>Correction factor: CF = G²/N = ${fmt(G)}²/${N} = ${fmt(CF)}</p>
+        <p>Total SS: SST = Σy² − CF = ${fmt(sumSquares)} − ${fmt(CF)} = ${fmt(ssTotal)}</p>
+        <p>Treatment SS: SSTr = Σ(Tᵢ²/r) − CF = ${fmt(ssTreatment)}</p>
+        <p>Error SS: SSE = SST − SSTr = ${fmt(ssTotal)} − ${fmt(ssTreatment)} = ${fmt(ssError)}</p>
+        <p>MSTr = SSTr/(t − 1) = ${fmt(ssTreatment)}/${dfTreatment} = ${fmt(MSTr)}</p>
+        <p>MSE = SSE/(N − t) = ${fmt(ssError)}/${dfError} = ${fmt(MSE)}</p>
+        <p>F = MSTr/MSE = ${fmt(MSTr)}/${fmt(MSE)} = ${fmt(F)}</p>
+    `;
+
+    const tableHTML = `
+        <h2>CRD ANOVA Table</h2>
+        <table class="anova-results">
+            <tr>
+                <th>Source of Variation</th>
+                <th>SS</th>
+                <th>df</th>
+                <th>MS</th>
+                <th>F</th>
+            </tr>
+            <tr>
+                <td>Treatments</td>
+                <td>${fmt(ssTreatment)}</td>
+                <td>${dfTreatment}</td>
+                <td>${fmt(MSTr)}</td>
+                <td>${fmt(F)}</td>
+            </tr>
+            <tr>
+                <td>Error</td>
+                <td>${fmt(ssError)}</td>
+                <td>${dfError}</td>
+                <td>${fmt(MSE)}</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td>Total</td>
+                <td>${fmt(ssTotal)}</td>
+                <td>${dfTotal}</td>
+                <td>—</td>
+                <td>—</td>
+            </tr>
+        </table>
+        ${formulaHTML}
+        <p><strong>Note:</strong> Compare the calculated F-statistic
+        with the appropriate critical F-value for your chosen
+        significance level, using numerator df = ${dfTreatment}
+        and denominator df = ${dfError}.</p>
+    `;
+
+    output.innerHTML = tableHTML;
+
+    message.textContent =
+        "ANOVA calculation completed. Check the results and formulas below.";
+}
+
+function clearAnovaData() {
+    document.getElementById("anovaInputTable").innerHTML = "";
+    document.getElementById("anovaOutput").innerHTML = "";
+    document.getElementById("anovaMessage").textContent = "";
+    document.getElementById("anovaN").textContent = "";
+}
+	document.addEventListener("DOMContentLoaded", function () {
+    createAnovaInputs();
+});
 </script>
 
+<section class="anova-section" id="anovaSection">
+
+    <h1>CRD Analysis of Variance</h1>
+
+    <p>
+        Enter the observed data for each treatment and replication.
+        The calculator will compute the ANOVA table.
+    </p>
+
+    <div class="controls">
+        <div>
+            <label for="anovaT">Number of Treatments (t)</label>
+            <input type="number" id="anovaT"
+                   min="2" max="10" value="3"
+       			   onchange="createAnovaInputs()">
+        </div>
+
+        <div>
+            <label for="anovaR">Replications per Treatment (r)</label>
+            <input type="number" id="anovaR"
+                   min="2" max="10" value="4"
+                   onchange="createAnovaInputs()">
+        </div>
+    </div>
+
+    <p id="anovaN" class="anova-message"></p>
+
+    <div id="anovaInputTable"
+         class="table-wrapper anova-data"></div>
+
+    <button onclick="computeCRDAnova()">
+        Compute ANOVA
+    </button>
+
+    <button onclick="clearAnovaData()">
+        Clear Data
+    </button>
+
+    <p id="anovaMessage" class="anova-message"></p>
+
+    <div id="anovaOutput" class="table-wrapper"></div>
+
+    <h2>Formulas Used</h2>
+
+    <div class="anova-formula">
+        <strong>1. Correction Factor</strong>
+        <p>CF = G² / N</p>
+    </div>
+
+    <div class="anova-formula">
+        <strong>2. Total Sum of Squares</strong>
+        <p>SST = Σy² − CF</p>
+    </div>
+
+    <div class="anova-formula">
+        <strong>3. Treatment Sum of Squares</strong>
+        <p>SSTr = Σ(Tᵢ² / r) − CF</p>
+    </div>
+
+    <div class="anova-formula">
+        <strong>4. Error Sum of Squares</strong>
+        <p>SSE = SST − SSTr</p>
+    </div>
+
+    <div class="anova-formula">
+        <strong>5. Mean Squares</strong>
+        <p>MSTr = SSTr / (t − 1)</p>
+        <p>MSE = SSE / (N − t)</p>
+    </div>
+
+    <div class="anova-formula">
+        <strong>6. F-statistic</strong>
+        <p>F = MSTr / MSE</p>
+    </div>
+
+</section>
 
 
 
