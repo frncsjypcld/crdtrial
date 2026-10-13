@@ -242,7 +242,52 @@ as the treatment number and the corresponding ranks in each group as the plot nu
         size: auto;
         margin: 10mm;
     }
-}	
+}
+	/* CRD ANOVA Calculator */
+.anova-section {
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    padding: 18px;
+    margin-top: 30px;
+}
+
+.anova-data input {
+    width: 85px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.anova-data th,
+.anova-data td,
+.anova-results th,
+.anova-results td {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: center;
+}
+
+.anova-formula {
+    background: #f3f5f7;
+    border-left: 4px solid #174a70;
+    padding: 12px;
+    margin: 12px 0;
+    overflow-wrap: anywhere;
+}
+
+.anova-results {
+    width: 100%;
+    margin-top: 15px;
+}
+
+.anova-results td:first-child,
+.anova-results th:first-child {
+    text-align: left;
+}
+
+.anova-message {
+    font-weight: bold;
+    margin: 12px 0;
+}
 </style>
 </head>
 
@@ -564,6 +609,8 @@ function printCRDPlot() {
 }
 	
 </script>
+
+
 
 
 </body>
