@@ -21,21 +21,21 @@ rarely used.
 
 
 <ul>
-	<li> <b>Step 1.</b> Determine the total number of experimental plots (n) as the product of the number of treatments
+	<li> <b>Step 1. </b> Determine the total number of experimental plots (n) as the product of the number of treatments
 (t) and the number of replications (r ), that is n = rt.
 In our example, we have a field experiment with four treatments and replicated five times, in our case we
 have, n = (5)(4) = 20
 <p></p>
-	<li> <b>Step 2.</b> Create an experimental plot and assign a plot number to each experimental plot in any convenient
+	<li> <b>Step 2. </b> Create an experimental plot and assign a plot number to each experimental plot in any convenient
 manner; for example. Consecutively from 1 to n.
 		<p></p>
-	<li> <b>Step 3.</b> Assign the treatments to the experimental plot by any of the following randomization schemes.
+	<li> <b>Step 3. </b> Assign the treatments to the experimental plot by any of the following randomization schemes.
 In our case, we will use Table of Random Numbers
 		<p></p>
-	<li> <b>Step 4.</b> Divide the ranks in Step 3 into <em>t</em> groups, each consisting of <em>r</em> numbers, according to the sequence
+	<li> <b>Step 4. </b> Divide the ranks in Step 3 into <em>t</em> groups, each consisting of <em>r</em> numbers, according to the sequence
 in which the random number appeared.
 		<p></p>
-	<li> <b>Step 5.</b>Assign the <em>t</em> treatments to the <em>n</em> experimental plots, by using the group number in Step 4
+	<li> <b>Step 5. </b> Assign the <em>t</em> treatments to the <em>n</em> experimental plots, by using the group number in Step 4
 as the treatment number and the corresponding ranks in each group as the plot number in which the corresponding treatment is to be assigned.
 </ul>
 	
@@ -193,6 +193,56 @@ as the treatment number and the corresponding ranks in each group as the plot nu
             display: none !important;
         }
     }
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #step3,
+    #step3 * {
+        visibility: visible;
+    }
+
+    #step3 {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+
+    #step3 h2,
+    #step3Info,
+    #step3 .note,
+    #step3 button {
+        display: none !important;
+    }
+
+    #plotLayout {
+        display: block !important;
+        overflow: visible !important;
+        margin: 0;
+    }
+
+    #plotLayout table {
+        margin: 0 auto;
+        border-collapse: collapse;
+    }
+
+    #plotLayout td {
+        border: 1px solid black !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    @page {
+        size: auto;
+        margin: 10mm;
+    }
+}	
 </style>
 </head>
 
@@ -272,7 +322,7 @@ as the treatment number and the corresponding ranks in each group as the plot nu
 
     <div id="plotLayout" class="table-wrapper"></div>
 
-    <button onclick="window.print()">Print Results</button>
+	<button onclick="printCRDPlot()">Print CRD Plot Only</button>
     <button onclick="startAgain()">Start Again</button>
 </section>
 
@@ -504,6 +554,15 @@ as the treatment number and the corresponding ranks in each group as the plot nu
     }
 
     updateTotal();
+function printCRDPlot() {
+    if (!layoutGenerated) {
+        alert("Please generate the CRD plot first.");
+        return;
+    }
+
+    window.print();
+}
+	
 </script>
 
 
