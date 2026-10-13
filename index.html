@@ -790,17 +790,110 @@ function computeCRDAnova() {
 
     // Show formulas with the actual values substituted
     const formulaHTML = `
-        <h3>Computed Values</h3>
-        <p>Grand total: G = ${fmt(G)}</p>
-        <p>Number of observations: N = ${N}</p>
-        <p>Correction factor: CF = G²/N = ${fmt(G)}²/${N} = ${fmt(CF)}</p>
-        <p>Total SS: SST = Σy² − CF = ${fmt(sumSquares)} − ${fmt(CF)} = ${fmt(ssTotal)}</p>
-        <p>Treatment SS: SSTr = Σ(Tᵢ²/r) − CF = ${fmt(ssTreatment)}</p>
-        <p>Error SS: SSE = SST − SSTr = ${fmt(ssTotal)} − ${fmt(ssTreatment)} = ${fmt(ssError)}</p>
-        <p>MSTr = SSTr/(t − 1) = ${fmt(ssTreatment)}/${dfTreatment} = ${fmt(MSTr)}</p>
-        <p>MSE = SSE/(N − t) = ${fmt(ssError)}/${dfError} = ${fmt(MSE)}</p>
-        <p>F = MSTr/MSE = ${fmt(MSTr)}/${fmt(MSE)} = ${fmt(F)}</p>
-    `;
+    <h3>Computed Values and Formulas</h3>
+
+    <div class="table-wrapper">
+        <table class="anova-results">
+            <thead>
+                <tr>
+                    <th>Computed Value</th>
+                    <th>Formula</th>
+                    <th>Substitution / Result</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>Number of observations (N)</td>
+                    <td>N = tr</td>
+                    <td>${t} × ${r} = ${N}</td>
+                </tr>
+
+                <tr>
+                    <td>Grand total (G)</td>
+                    <td>G = Σy</td>
+                    <td>${fmt(G)}</td>
+                </tr>
+
+                <tr>
+                    <td>Grand mean</td>
+                    <td>G / N</td>
+                    <td>${fmt(G)} / ${N} = ${fmt(G / N)}</td>
+                </tr>
+
+                <tr>
+                    <td>Correction factor (CF)</td>
+                    <td>G² / N</td>
+                    <td>${fmt(G)}² / ${N} = ${fmt(CF)}</td>
+                </tr>
+
+                <tr>
+                    <td>Total sum of squares (SST)</td>
+                    <td>Σy² − CF</td>
+                    <td>${fmt(sumSquares)} − ${fmt(CF)} = ${fmt(ssTotal)}</td>
+                </tr>
+
+                <tr>
+                    <td>Treatment sum of squares (SSTr)</td>
+                    <td>Σ(Tᵢ² / r) − CF</td>
+                    <td>${fmt(treatmentTotals.reduce((sum, total) => sum + total * total / r, 0))} − ${fmt(CF)} = ${fmt(ssTreatment)}</td>
+                </tr>
+
+                <tr>
+                    <td>Error sum of squares (SSE)</td>
+                    <td>SST − SSTr</td>
+                    <td>${fmt(ssTotal)} − ${fmt(ssTreatment)} = ${fmt(ssError)}</td>
+                </tr>
+
+                <tr>
+                    <td>Treatment degrees of freedom</td>
+                    <td>t − 1</td>
+                    <td>${t} − 1 = ${dfTreatment}</td>
+                </tr>
+
+                <tr>
+                    <td>Error degrees of freedom</td>
+                    <td>N − t</td>
+                    <td>${N} − ${t} = ${dfError}</td>
+                </tr>
+
+                <tr>
+                    <td>Total degrees of freedom</td>
+                    <td>N − 1</td>
+                    <td>${N} − 1 = ${dfTotal}</td>
+                </tr>
+
+                <tr>
+                    <td>Treatment mean square (MSTr)</td>
+                    <td>SSTr / (t − 1)</td>
+                    <td>${fmt(ssTreatment)} / ${dfTreatment} = ${fmt(MSTr)}</td>
+                </tr>
+
+                <tr>
+                    <td>Error mean square (MSE)</td>
+                    <td>SSE / (N − t)</td>
+                    <td>${fmt(ssError)} / ${dfError} = ${fmt(MSE)}</td>
+                </tr>
+
+                <tr>
+                    <td>Calculated F-value</td>
+                    <td>MSTr / MSE</td>
+                    <td>${fmt(MSTr)} / ${fmt(MSE)} = ${fmt(F)}</td>
+                </tr>
+
+                <tr>
+                    <td>Coefficient of variation (CV)</td>
+                    <td>[√MSE / |Grand mean|] × 100</td>
+                    <td>${
+                        G / N !== 0 && Number.isFinite(MSE) && MSE >= 0
+                            ? `[√${fmt(MSE)} / |${fmt(G / N)}|] × 100 = ${fmt(Math.sqrt(MSE) / Math.abs(G / N) * 100)}%`
+                            : "Undefined"
+                    }</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`;
 
     const tableHTML = `
         <h2>CRD ANOVA Table</h2>
